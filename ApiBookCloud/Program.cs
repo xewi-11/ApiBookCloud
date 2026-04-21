@@ -22,6 +22,11 @@ HelperCryptography.Initialize(builder.Configuration);
 HelperActionOAuthService oauthHelper = new HelperActionOAuthService(builder.Configuration);
 builder.Services.AddSingleton(oauthHelper);
 builder.Services.AddScoped<RepositoryUsuarios>();
+builder.Services.AddScoped<RepositoryPedidos>();
+builder.Services.AddScoped<RepositoryFavoritos>();
+builder.Services.AddScoped<RepositoryWallet>();
+builder.Services.AddScoped<RepositoryPagos>();
+builder.Services.AddScoped<RepositoryChats>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<HelperUsuarioToken>();
 
