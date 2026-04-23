@@ -1,7 +1,6 @@
-﻿using Azure.Storage.Blobs;
+﻿using ApiBookCloud.Models;
+using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using ApiBookCloud.Models;
-using System.Threading;
 
 namespace MvcCoreAzureStorage.Services
 {
@@ -60,10 +59,22 @@ namespace MvcCoreAzureStorage.Services
 
             string blobPath = BuildBlobPath(virtualDirectory, blobName);
             BlobClient blobClient = containerClient.GetBlobClient(blobPath);
-            await blobClient.UploadAsync(stream, overwrite: true);
 
-            // Devolvemos la ruta/nombre del blob para persistirla en BD,
-            // no la URL absoluta (contenedor privado).
+            // 1. AÑADIMOS ESTO: Determinamos si es JPG o PNG según el nombre
+            string extension = Path.GetExtension(blobName).ToLower();
+            string contentType = "image/jpeg"; // Por defecto
+            if (extension == ".png") contentType = "image/png";
+            else if (extension == ".gif") contentType = "image/gif";
+
+            // 2. AÑADIMOS ESTO: Creamos las opciones de subida con los Headers
+            BlobUploadOptions options = new BlobUploadOptions
+            {
+                HttpHeaders = new BlobHttpHeaders { ContentType = contentType }
+            };
+
+            // 3. MODIFICAMOS LA SUBIDA: Le pasamos las opciones en lugar del overwrite: true básico
+            await blobClient.UploadAsync(stream, options);
+
             return blobPath;
         }
 
