@@ -142,8 +142,8 @@ namespace ApiBookCloud.Controllers
                 string blobName = $"usuario_{id}_{Guid.NewGuid():N}{extension}";
 
                 using Stream stream = foto.OpenReadStream();
-                await this.storage.UploadloadAsync(blobName, stream, "usuarios");
-                user.Foto = blobName;
+                string fotoUrl = await this.storage.UploadloadAsync(blobName, stream, "usuarios");
+                user.Foto = fotoUrl;
             }
             else
             {

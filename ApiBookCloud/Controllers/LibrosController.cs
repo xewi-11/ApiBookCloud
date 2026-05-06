@@ -1,9 +1,9 @@
 using ApiBookCloud.Data;
+using ApiBookCloud.Models;
 using BookCloud.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NugetModelsBookCloud.Models;
-using NugetModelsBookCloud.Repositories.Interfaces;
 
 namespace ApiBookCloud.Controllers
 {
@@ -42,16 +42,28 @@ namespace ApiBookCloud.Controllers
 
         [HttpPost]
         [Route("[action]")]
-        public async Task<ActionResult> InsertLibro([FromForm] Libro libro, IFormFile? foto)
+        public async Task<ActionResult> InsertLibro([FromForm] CreateLibroRequestDto request)
         {
             Stream? stream = null;
             string? fileName = null;
 
-            if (foto != null)
+            if (request.Foto != null)
             {
-                stream = foto.OpenReadStream();
-                fileName = foto.FileName;
+                stream = request.Foto.OpenReadStream();
+                fileName = request.Foto.FileName;
             }
+
+            Libro libro = new Libro
+            {
+                Titulo = request.Titulo,
+                Autor = request.Autor,
+                Descripcion = request.Descripcion,
+                Precio = request.Precio,
+                Stock = request.Stock,
+                UsuarioId = request.UsuarioId,
+                FechaPublicacion = request.FechaPublicacion,
+                Activo = request.Activo
+            };
 
             int id = await this.repo.InsertLibro(libro, stream, fileName);
             return Ok(new { Id = id });
@@ -59,16 +71,30 @@ namespace ApiBookCloud.Controllers
 
         [HttpPut]
         [Route("[action]")]
-        public async Task<ActionResult> UpdateLibro([FromForm] Libro libro, IFormFile? foto)
+        public async Task<ActionResult> UpdateLibro([FromForm] UpdateLibroRequestDto request)
         {
             Stream? stream = null;
             string? fileName = null;
 
-            if (foto != null)
+            if (request.FotoNueva != null)
             {
-                stream = foto.OpenReadStream();
-                fileName = foto.FileName;
+                stream = request.FotoNueva.OpenReadStream();
+                fileName = request.FotoNueva.FileName;
             }
+
+            Libro libro = new Libro
+            {
+                Id = request.Id,
+                Titulo = request.Titulo,
+                Autor = request.Autor,
+                Descripcion = request.Descripcion,
+                Precio = request.Precio,
+                Stock = request.Stock,
+                UsuarioId = request.UsuarioId,
+                FechaPublicacion = request.FechaPublicacion,
+                Activo = request.Activo,
+                Foto = request.Foto
+            };
 
             await this.repo.UpdateLibro(libro, stream, fileName);
             return Ok();

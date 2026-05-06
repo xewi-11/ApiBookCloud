@@ -1,3 +1,4 @@
+using ApiBookCloud.Models;
 using ApiBookCloud.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -51,17 +52,17 @@ namespace ApiBookCloud.Controllers
 
         [Authorize]
         [HttpPost("{chatId}/mensaje")]
-        public async Task<ActionResult<Mensaje>> EnviarMensaje(int chatId, [FromQuery] int remitenteId, [FromBody] string contenido)
+        public async Task<ActionResult<Mensaje>> EnviarMensaje(int chatId, [FromBody] EnviarMensajeRequestDto request)
         {
-            var mensaje = await _repository.EnviarMensajeAsync(chatId, remitenteId, contenido);
+            var mensaje = await _repository.EnviarMensajeAsync(chatId, request.RemitenteId, request.Contenido);
             return Ok(mensaje);
         }
 
         [Authorize]
         [HttpPost("{chatId}/ubicacion")]
-        public async Task<ActionResult<Mensaje>> EnviarUbicacion(int chatId, [FromQuery] int remitenteId, [FromQuery] decimal latitud, [FromQuery] decimal longitud)
+        public async Task<ActionResult<Mensaje>> EnviarUbicacion(int chatId, [FromBody] EnviarUbicacionRequestDto request)
         {
-            var mensaje = await _repository.EnviarUbicacionAsync(chatId, remitenteId, latitud, longitud);
+            var mensaje = await _repository.EnviarUbicacionAsync(chatId, request.RemitenteId, request.Latitud, request.Longitud);
             return Ok(mensaje);
         }
 

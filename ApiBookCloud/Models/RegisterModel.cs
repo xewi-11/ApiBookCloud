@@ -1,6 +1,6 @@
 namespace ApiBookCloud.Models
 {
-    public class RegisterModel
+    public class RegisterRequestModel
     {
         public string Nombre { get; set; } = string.Empty;
         public string Correo { get; set; } = string.Empty;

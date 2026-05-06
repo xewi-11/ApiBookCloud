@@ -75,7 +75,8 @@ namespace MvcCoreAzureStorage.Services
             // 3. MODIFICAMOS LA SUBIDA: Le pasamos las opciones en lugar del overwrite: true básico
             await blobClient.UploadAsync(stream, options);
 
-            return blobPath;
+            // Return the absolute URI so callers can store a ready-to-use URL
+            return blobClient.Uri.AbsoluteUri;
         }
 
         public async Task<(Stream Stream, string ContentType)> GetBlobStreamAsync(string blobName, string? virtualDirectory = null)

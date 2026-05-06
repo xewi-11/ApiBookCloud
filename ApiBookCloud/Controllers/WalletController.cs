@@ -1,3 +1,4 @@
+using ApiBookCloud.Models;
 using ApiBookCloud.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,19 +27,33 @@ namespace ApiBookCloud.Controllers
 
         [Authorize]
         [HttpGet("movimientos/{usuarioId}")]
-        public async Task<ActionResult<List<SaldoMovimiento>>> GetMovimientos(int usuarioId, [FromQuery] int limit = 20)
+        public async Task<ActionResult<List<object>>> GetMovimientos(int usuarioId, [FromQuery] int limit = 20)
         {
             var movimientos = await _repository.GetMovimientosAsync(usuarioId, limit);
-            return Ok(movimientos);
+            
+            // Devolver DTOs para evitar referencias circulares
+            var dtos = movimientos.Select(m => new
+            {
+                m.Id,
+                m.UsuarioId,
+                m.PedidoId,
+                m.Monto,
+                m.Tipo,
+                m.Descripcion,
+                m.Fecha,
+                m.Activo
+            }).ToList();
+            
+            return Ok(dtos);
         }
 
         [Authorize]
         [HttpPost("recargar")]
-        public async Task<ActionResult> RecargarSaldo(int usuarioId, [FromQuery] decimal monto, [FromQuery] string descripcion)
+        public async Task<ActionResult> RecargarSaldo([FromBody] RecargarSaldoRequestDto request)
         {
             try
             {
-                await _repository.RecargarSaldoAsync(usuarioId, monto, descripcion);
+                await _repository.RecargarSaldoAsync(request.UsuarioId, request.Monto, request.Descripcion);
                 return Ok();
             }
             catch (Exception ex)
@@ -49,11 +64,11 @@ namespace ApiBookCloud.Controllers
 
         [Authorize]
         [HttpPost("descontar")]
-        public async Task<ActionResult> DescontarSaldo(int usuarioId, [FromQuery] int pedidoId, [FromQuery] decimal monto, [FromQuery] string descripcion)
+        public async Task<ActionResult> DescontarSaldo([FromBody] DescontarSaldoRequestDto request)
         {
             try
             {
-                await _repository.DescontarSaldoAsync(usuarioId, pedidoId, monto, descripcion);
+                await _repository.DescontarSaldoAsync(request.UsuarioId, request.PedidoId, request.Monto, request.Descripcion);
                 return Ok();
             }
             catch (Exception ex)
@@ -72,11 +87,11 @@ namespace ApiBookCloud.Controllers
 
         [Authorize]
         [HttpPost("transferir-vendedores")]
-        public async Task<ActionResult> TransferirSaldoAVendedores([FromQuery] int pedidoId, [FromQuery] int compradorId)
+        public async Task<ActionResult> TransferirSaldoAVendedores([FromBody] TransferirSaldoRequestDto request)
         {
             try
             {
-                await _repository.TransferirSaldoAVendedoresAsync(pedidoId, compradorId);
+                await _repository.TransferirSaldoAVendedoresAsync(request.PedidoId, request.CompradorId);
                 return Ok();
             }
             catch (Exception ex)

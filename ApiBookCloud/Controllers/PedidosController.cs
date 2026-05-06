@@ -1,4 +1,6 @@
+using ApiBookCloud.Models;
 using ApiBookCloud.Repositories;
+using ApiOAuthEmpleados.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NugetModelsBookCloud.Models;
@@ -10,39 +12,91 @@ namespace ApiBookCloud.Controllers
     public class PedidosController : ControllerBase
     {
         private readonly RepositoryPedidos _repository;
+        private readonly HelperUsuarioToken _helperUsuarioToken;
 
-        public PedidosController(RepositoryPedidos repository)
+        public PedidosController(RepositoryPedidos repository, HelperUsuarioToken helperUsuarioToken)
         {
             _repository = repository;
+            _helperUsuarioToken = helperUsuarioToken;
         }
 
         [Authorize]
         [HttpGet("usuario/{usuarioId}")]
-        public async Task<ActionResult<List<Pedido>>> GetPedidosUsuario(int usuarioId)
+        public async Task<ActionResult<List<object>>> GetPedidosUsuario(int usuarioId)
         {
             var pedidos = await _repository.GetPedidosUsuarioAsync(usuarioId);
-            return Ok(pedidos);
+            
+            // Devolver DTOs para evitar referencias circulares
+            var dtos = pedidos.Select(p => new
+            {
+                p.Id,
+                p.UsuarioId,
+                p.FechaPedido,
+                p.Total,
+                p.Estado,
+                p.Activo
+            }).ToList();
+            
+            return Ok(dtos);
         }
 
         [Authorize]
         [HttpGet("{pedidoId}")]
-        public async Task<ActionResult<Pedido>> GetPedido(int pedidoId)
+        public async Task<ActionResult<object>> GetPedido(int pedidoId)
         {
             var pedido = await _repository.GetPedidoAsync(pedidoId);
             if (pedido == null)
             {
                 return NotFound();
             }
-            return Ok(pedido);
+            
+            // Devolver DTO con detalles pero sin referencias circulares
+            var dto = new
+            {
+                pedido.Id,
+                pedido.UsuarioId,
+                pedido.FechaPedido,
+                pedido.Total,
+                pedido.Estado,
+                pedido.Activo,
+                Detalles = pedido.PedidoDetalles?.Where(d => d.Activo).Select(d => new
+                {
+                    d.Id,
+                    d.PedidoId,
+                    d.LibroId,
+                    d.Cantidad,
+                    d.PrecioUnitario,
+                    LibroTitulo = d.Libro?.Titulo,
+                    LibroAutor = d.Libro?.Autor,
+                    LibroFoto = d.Libro?.Foto,
+                    d.Activo
+                }).ToList()
+            };
+            
+            return Ok(dto);
         }
 
         [Authorize]
         [HttpPost("crear")]
-        public async Task<ActionResult<int>> CrearPedido(int usuarioId, decimal total, [FromBody] List<PedidoDetalle> detalles)
+        public async Task<ActionResult<int>> CrearPedido([FromBody] CrearPedidoRequestDto request)
         {
             try
             {
-                int pedidoId = await _repository.CrearPedidoAsync(usuarioId, total, detalles);
+                int? usuarioId = _helperUsuarioToken.GetUserId();
+                if (!usuarioId.HasValue)
+                {
+                    return Unauthorized("No se pudo identificar al usuario autenticado.");
+                }
+
+                List<PedidoDetalle> detalles = request.Detalles.Select(d => new PedidoDetalle
+                {
+                    LibroId = d.LibroId,
+                    Cantidad = d.Cantidad,
+                    PrecioUnitario = d.PrecioUnitario,
+                    Activo = true
+                }).ToList();
+
+                int pedidoId = await _repository.CrearPedidoAsync(usuarioId.Value, request.Total, detalles);
                 return Ok(pedidoId);
             }
             catch (Exception ex)
@@ -53,9 +107,9 @@ namespace ApiBookCloud.Controllers
 
         [Authorize]
         [HttpPut("estado/{pedidoId}")]
-        public async Task<ActionResult> ActualizarEstado(int pedidoId, [FromBody] string estado)
+        public async Task<ActionResult> ActualizarEstado(int pedidoId, [FromBody] ActualizarEstadoPedidoRequestDto request)
         {
-            await _repository.ActualizarEstadoPedidoAsync(pedidoId, estado);
+            await _repository.ActualizarEstadoPedidoAsync(pedidoId, request.Estado);
             return Ok();
         }
     }

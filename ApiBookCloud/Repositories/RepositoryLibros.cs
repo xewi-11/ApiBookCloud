@@ -379,8 +379,8 @@ namespace BookCloud.Repositories
             }
 
             string blobName = $"libro_{Guid.NewGuid():N}{extension}";
-            await this.storage.UploadloadAsync(blobName, fotoStream, "libros");
-            libro.Foto = blobName;
+            string fotoUrl = await this.storage.UploadloadAsync(blobName, fotoStream, "libros");
+            libro.Foto = fotoUrl;
         }
     }
 }
