@@ -345,12 +345,15 @@ namespace BookCloud.Repositories
 
         public async Task DeleteLibro(int id)
         {
-            string sql = "sp_Libro_Eliminar @LibroId";
+            // The command should execute the stored procedure.
+            string sql = "EXEC sp_Libro_Eliminar @LibroId";
             SqlParameter panLibroId = new SqlParameter("@LibroId", id);
 
+            // Execute the stored procedure using EF Core directly, which is simpler and matches the pattern.
+            // Or keeping your DbCommand approach, we can just fix the command text.
             using (DbCommand com = this.context.Database.GetDbConnection().CreateCommand())
             {
-                com.CommandType = CommandType.StoredProcedure;
+                com.CommandType = CommandType.Text; // Changed to Text since we are using EXEC
                 com.CommandText = sql;
                 com.Parameters.Add(panLibroId);
                 await com.Connection.OpenAsync();
